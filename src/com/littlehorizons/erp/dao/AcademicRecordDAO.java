@@ -3,6 +3,7 @@ package com.littlehorizons.erp.dao;
 import com.littlehorizons.erp.model.AcademicPeriod;
 import com.littlehorizons.erp.model.AcademicRecord;
 import com.littlehorizons.erp.model.DatabaseValue;
+import com.littlehorizons.erp.model.Subject;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,6 +23,10 @@ public class AcademicRecordDAO extends BaseDAO {
     private static final String UPSERT_RECORD = "INSERT INTO registros_academicos (id_estudiante, id_materia, "
             + "id_profesor, año_academico, periodo_academico, valor_nota, fecha_registro) VALUES (?, ?, ?, ?, ?, ?, ?) "
             + "ON DUPLICATE KEY UPDATE id_profesor = ?, valor_nota = ?, fecha_registro = ?";
+    // Academic performance report: each grade with the subject it belongs to.
+    private static final String SELECT_RECORDS_WITH_SUBJECT = "SELECT r.id_registro, r.valor_nota, "
+            + "r.periodo_academico, m.id_materia, m.codigo_materia, m.nombre_materia "
+            + "FROM registros_academicos r INNER JOIN materias m ON m.id_materia = r.id_materia";
 
     /** Saves new grades and corrects existing ones, all in one transaction. */
     public int saveAll(List<AcademicRecord> records) throws DataAccessException {
@@ -64,6 +69,26 @@ public class AcademicRecordDAO extends BaseDAO {
                     statement.setInt(2, year);
                     statement.setString(3, period.getDatabaseValue());
                 }, AcademicRecordDAO::mapRecord, "No se pudo consultar las notas del grado.");
+    }
+
+    /** @return every academic record with its subject (ID, code and name), for the performance report */
+    public List<AcademicRecord> findAllWithSubject() throws DataAccessException {
+        return queryList(SELECT_RECORDS_WITH_SUBJECT, statement -> { }, AcademicRecordDAO::mapRecordWithSubject,
+                "No se pudo consultar los registros académicos.");
+    }
+
+    private static AcademicRecord mapRecordWithSubject(ResultSet row) throws SQLException {
+        Subject subject = new Subject();
+        subject.setId(row.getInt("id_materia"));
+        subject.setCode(row.getString("codigo_materia"));
+        subject.setName(row.getString("nombre_materia"));
+
+        AcademicRecord record = new AcademicRecord();
+        record.setId(row.getInt("id_registro"));
+        record.setValue(row.getBigDecimal("valor_nota"));
+        record.setPeriod(DatabaseValue.fromDatabaseValue(AcademicPeriod.class, row.getString("periodo_academico")));
+        record.setSubject(subject);
+        return record;
     }
 
     private static AcademicRecord mapRecord(ResultSet row) throws SQLException {

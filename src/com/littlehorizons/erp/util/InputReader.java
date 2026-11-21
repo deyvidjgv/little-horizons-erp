@@ -175,6 +175,11 @@ public class InputReader {
         }
     }
 
+    /** Waits until the user presses Enter. */
+    public void waitForEnter() {
+        readLine();
+    }
+
     private String ask(String label, String current) {
         System.out.print(current == null ? label + ": " : label + " [" + current + "]: ");
         return readLine();

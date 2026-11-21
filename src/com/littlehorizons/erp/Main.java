@@ -1,6 +1,7 @@
 package com.littlehorizons.erp;
 
 import com.littlehorizons.erp.controller.AcademicRecordController;
+import com.littlehorizons.erp.controller.AcademicReportController;
 import com.littlehorizons.erp.controller.AssignmentController;
 import com.littlehorizons.erp.controller.AttendanceController;
 import com.littlehorizons.erp.controller.ClubController;
@@ -37,11 +38,13 @@ import com.littlehorizons.erp.dao.StudentGuardianDAO;
 import com.littlehorizons.erp.dao.SubjectDAO;
 import com.littlehorizons.erp.dao.SubjectEnrollmentDAO;
 import com.littlehorizons.erp.dao.TeacherDAO;
+import com.littlehorizons.erp.service.AcademicReportService;
 import com.littlehorizons.erp.service.InvoiceService;
 import com.littlehorizons.erp.util.DatabaseConnection;
 import com.littlehorizons.erp.util.ErrorLogger;
 import com.littlehorizons.erp.util.InputReader;
 import com.littlehorizons.erp.view.AcademicRecordView;
+import com.littlehorizons.erp.view.AcademicReportView;
 import com.littlehorizons.erp.view.AcademicView;
 import com.littlehorizons.erp.view.AssignmentView;
 import com.littlehorizons.erp.view.AttendanceView;
@@ -111,8 +114,9 @@ public class Main {
         AssignmentDAO assignmentDAO = new AssignmentDAO();
         SubjectEnrollmentController subjectEnrollmentController = new SubjectEnrollmentController(
                 subjectEnrollmentDAO, new EnrollmentDAO(), subjectDAO, new GradeDAO());
+        AcademicRecordDAO academicRecordDAO = new AcademicRecordDAO();
         AcademicRecordController academicRecordController =
-                new AcademicRecordController(new AcademicRecordDAO(), assignmentDAO, subjectEnrollmentDAO);
+                new AcademicRecordController(academicRecordDAO, assignmentDAO, subjectEnrollmentDAO);
         AttendanceController attendanceController =
                 new AttendanceController(new AttendanceDAO(), assignmentDAO, subjectEnrollmentDAO, new EnrollmentDAO());
         AcademicRecordView academicRecordView = new AcademicRecordView(input, academicRecordController,
@@ -122,7 +126,9 @@ public class Main {
         AcademicView academicView = new AcademicView(input,
                 new SubjectView(input, subjectController),
                 new SubjectEnrollmentView(input, subjectEnrollmentController, studentController, subjectController),
-                academicRecordView, attendanceView);
+                academicRecordView, attendanceView,
+                new AcademicReportView(input,
+                        new AcademicReportController(academicRecordDAO, new AcademicReportService())));
 
         ClubController clubController = new ClubController(new ClubDAO(), new MembershipDAO(), teacherDAO, studentDAO);
         EventController eventController =

@@ -4,7 +4,10 @@ import com.littlehorizons.erp.dao.AcademicRecordDAO;
 import com.littlehorizons.erp.dao.DataAccessException;
 import com.littlehorizons.erp.model.AcademicRecord;
 import com.littlehorizons.erp.model.SubjectPerformance;
+import com.littlehorizons.erp.service.AcademicReportService;
+import com.littlehorizons.erp.util.ErrorLogger;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
@@ -17,9 +20,11 @@ public class AcademicReportController {
     private static final int AVERAGE_DECIMALS = 1;
 
     private final AcademicRecordDAO recordDAO;
+    private final AcademicReportService reportService;
 
-    public AcademicReportController(AcademicRecordDAO recordDAO) {
+    public AcademicReportController(AcademicRecordDAO recordDAO, AcademicReportService reportService) {
         this.recordDAO = recordDAO;
+        this.reportService = reportService;
     }
 
     /** @return the average of each subject (any period and student), from the highest to the lowest */
@@ -42,6 +47,17 @@ public class AcademicReportController {
                         .filter(performance -> performance.average().compareTo(highest) == 0)
                         .toList())
                 .orElse(List.of());
+    }
+
+    /** Saves the report in a text file; if it fails, the error is logged and the user is informed. */
+    public OperationResult saveReport(List<String> lines) {
+        try {
+            return OperationResult.ok("Reporte guardado en: " + reportService.write(lines));
+        } catch (IOException e) {
+            ErrorLogger.log("AcademicReportController.saveReport", e);
+            return OperationResult.error("No se pudo guardar el archivo del reporte. El detalle quedó guardado en "
+                    + ErrorLogger.LOG_FILE + ".");
+        }
     }
 
     /** BigDecimal keeps the exact sum of the grades; the average is rounded to one decimal. */
